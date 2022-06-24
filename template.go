@@ -3,12 +3,17 @@ package gendoc
 import (
 	"encoding/json"
 	"fmt"
+	"html/template"
+	"io/ioutil"
+	"os"
+	"regexp"
 	"sort"
 	"strings"
 
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/pseudomuto/protoc-gen-doc/extensions"
 	"github.com/pseudomuto/protokit"
+	"gopkg.in/yaml.v3"
 )
 
 // Template is a type for encapsulating all the parsed files, messages, fields, enums, services, extensions, etc. into
@@ -18,11 +23,38 @@ type Template struct {
 	Files []*File `json:"files"`
 	// Details about the scalar values and their respective types in supported languages.
 	Scalars []*ScalarValue `json:"scalarValueTypes"`
+	// Overview html
+	Overview template.HTML `json:"overview"`
+	Conf     Conf          `json:"conf"`
+}
+
+type Conf struct {
+	ProjectName string
 }
 
 // NewTemplate creates a Template object from a set of descriptors.
 func NewTemplate(descs []*protokit.FileDescriptor) *Template {
 	files := make([]*File, 0, len(descs))
+
+	var conf Conf
+	overview := template.HTML("")
+	resources_path := os.Getenv("PROTOC_GEN_DOC_RESOURCES_PATH")
+	if len(resources_path) > 0 {
+		b, err := ioutil.ReadFile(resources_path + "/overview.html")
+		if err != nil {
+			panic(err)
+		}
+		overview = template.HTML(string(b))
+
+		yamlFile, err := ioutil.ReadFile(resources_path + "/conf.yaml")
+		if err != nil {
+			panic(err)
+		}
+		err = yaml.Unmarshal(yamlFile, conf)
+		if err != nil {
+			panic(err)
+		}
+	}
 
 	for _, f := range descs {
 		file := &File{
@@ -75,7 +107,12 @@ func NewTemplate(descs []*protokit.FileDescriptor) *Template {
 		files = append(files, file)
 	}
 
-	return &Template{Files: files, Scalars: makeScalars()}
+	return &Template{
+		Files:    files,
+		Scalars:  makeScalars(),
+		Overview: overview,
+		Conf:     conf,
+	}
 }
 
 func makeScalars() []*ScalarValue {
@@ -171,6 +208,8 @@ type Message struct {
 	LongName    string `json:"longName"`
 	FullName    string `json:"fullName"`
 	Description string `json:"description"`
+	Topic       string `json:"topic"`
+	TopicType   string `json:"topic_type"`
 
 	HasExtensions bool `json:"hasExtensions"`
 	HasFields     bool `json:"hasFields"`
@@ -447,6 +486,8 @@ func parseMessage(pm *protokit.Descriptor) *Message {
 		Extensions:    make([]*MessageExtension, 0, len(pm.Extensions)),
 		Fields:        make([]*MessageField, 0, len(pm.Fields)),
 		Options:       mergeOptions(extractOptions(pm.GetOptions()), extensions.Transform(pm.OptionExtensions)),
+		Topic:         topic(pm.GetComments().String()),
+		TopicType:     topic_type(pm.GetComments().String()),
 	}
 
 	for _, ext := range pm.Extensions {
@@ -574,6 +615,23 @@ func description(comment string) string {
 	return val
 }
 
+func topic(comment string) string {
+	s := strings.TrimLeft(comment, "*/\n ")
+	r, _ := regexp.Compile("(PUBLISH|SUBSCRIBE) [^\n^ ^<]+")
+	return r.FindString(s)
+}
+
+func topic_type(comment string) string {
+	s := strings.TrimLeft(comment, "*/\n ")
+	if strings.Contains(s, "publish") {
+		return "publish"
+	} else if strings.Contains(s, "SUBSCRIBE") {
+		return "subscribe"
+	} else {
+		return ""
+	}
+}
+
 type orderedEnums []*Enum
 
 func (oe orderedEnums) Len() int           { return len(oe) }
@@ -588,9 +646,29 @@ func (oe orderedExtensions) Less(i, j int) bool { return oe[i].LongName < oe[j].
 
 type orderedMessages []*Message
 
-func (om orderedMessages) Len() int           { return len(om) }
-func (om orderedMessages) Swap(i, j int)      { om[i], om[j] = om[j], om[i] }
-func (om orderedMessages) Less(i, j int) bool { return om[i].LongName < om[j].LongName }
+func (om orderedMessages) Len() int      { return len(om) }
+func (om orderedMessages) Swap(i, j int) { om[i], om[j] = om[j], om[i] }
+func (om orderedMessages) Less(i, j int) bool {
+	left := 2
+	if strings.Contains(om[i].Description, "SUBSCRIBE") {
+		left = 1
+	} else if strings.Contains(om[i].Description, "PUBLISH") {
+		left = 0
+	}
+
+	right := 2
+	if strings.Contains(om[j].Description, "SUBSCRIBE") {
+		right = 1
+	} else if strings.Contains(om[j].Description, "PUBLISH") {
+		right = 0
+	}
+
+	if left != right {
+		return left < right
+	}
+
+	return om[i].LongName < om[j].LongName
+}
 
 type orderedServices []*Service
 

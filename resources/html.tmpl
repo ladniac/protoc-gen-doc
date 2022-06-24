@@ -2,9 +2,10 @@
 
 <html>
   <head>
-    <title>Protocol Documentation</title>
+    <title>{{.Conf.ProjectName}} Documentation</title>
     <meta charset="UTF-8">
     <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Ubuntu:400,700,400italic"/>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <style>
       body {
         width: 60em;
@@ -166,32 +167,52 @@
 
   <body>
 
-    <h1 id="title">Protocol Documentation</h1>
+    <h1 id="title">{{.Conf.ProjectName}} Documentation</h1>
+
+    <p>{{.Overview}}</p>
 
     <h2>Table of Contents</h2>
 
     <div id="toc-container">
       <ul id="toc">
-        {{range .Files}}
-          {{$file_name := .Name}}
-          <li>
-            <a href="#{{.Name}}">{{.Name}}</a>
-            <ul>
+        <li>
+          <ul>
+            <h2>Topics</h2>
+            {{range .Files}}
               {{range .Messages}}
-                <li>
-                  <a href="#{{.FullName}}"><span class="badge">M</span>{{.LongName}}</a>
-                </li>
+                {{ $length := len .Topic }} {{ if gt $length 0 }}
+                  <li>
+                    <a href="#{{.FullName}}"><span class="badge {{.TopicType}}">T</span>{{.Topic}}</a>
+                  </li>
+                {{end}}
               {{end}}
+            {{end}}
+          </ul>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-container">
+      <ul id="toc">
+        {{range .Files}}
+          <li>
+            <ul>
+              <h2>Messages</h2>
+              {{range .Messages}}
+                {{ $length := len .Topic }} {{ if eq $length 0 }}
+                  <li>
+                    <a href="#{{.FullName}}"><span class="badge">M</span>{{.LongName}}</a>
+                  </li>
+                {{end}}
+              {{end}}
+
+              <h2>Enums</h2>
               {{range .Enums}}
                 <li>
                   <a href="#{{.FullName}}"><span class="badge">E</span>{{.LongName}}</a>
                 </li>
               {{end}}
-              {{range .Extensions}}
-                <li>
-                  <a href="#{{$file_name}}-extensions"><span class="badge">X</span>File-level Extensions</a>
-                </li>
-              {{end}}
+
               {{range .Services}}
                 <li>
                   <a href="#{{.FullName}}"><span class="badge">S</span>{{.Name}}</a>
@@ -204,81 +225,150 @@
       </ul>
     </div>
 
-    {{range .Files}}
+    <h2>TOPICS</h2>
+      {{range .Files}}
       {{$file_name := .Name}}
       <div class="file-heading">
         <h2 id="{{.Name}}">{{.Name}}</h2><a href="#title">Top</a>
       </div>
       {{p .Description}}
+      {{ $Enums := .Enums}}
+      {{ $Messages := .Messages}}
 
       {{range .Messages}}
-        <h3 id="{{.FullName}}">{{.LongName}}</h3>
-        {{p .Description}}
+        <div class="topicdef">
+        {{ $length := len .Topic }} {{ if gt $length 0 }}
+          <h3 id="{{.FullName}}">
+              {{.LongName}}
+          </h3>
 
-        {{if .HasFields}}
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-              {{range .Fields}}
-                <tr>
-                  <td>{{.Name}}</td>
-                  <td><a href="#{{.FullType}}">{{.LongType}}</a></td>
-                  <td>{{.Label}}</td>
-                  <td><p>{{if (index .Options "deprecated"|default false)}}<strong>Deprecated.</strong> {{end}}{{.Description}} {{if .DefaultValue}}Default: {{.DefaultValue}}{{end}}</p></td>
-                </tr>
-              {{end}}
-            </tbody>
-          </table>
+          {{p .Description}}
 
-          {{$message := .}}
-          {{- range .FieldOptions}}
-            {{$option := .}}
-            {{if eq . "validator.field" "validate.rules" }}
-            <h4>Validated Fields</h4>
-            <table>
+          <span class="collapse" onclick="$(this).next().toggle('slow');">show more/less</span>
+          <div class="details">
+
+          {{if .HasFields}}
+            <table class="field-table">
               <thead>
-                <tr>
-                  <td>Field</td>
-                  <td>Validations</td>
-                </tr>
+                <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
               </thead>
               <tbody>
-              {{range $message.FieldsWithOption .}}
-                <tr>
-                  <td>{{.Name}}</td>
-                  <td>
-                    <ul>
-                    {{range (.Option $option).Rules}}
-                      <li>{{.Name}}: {{.Value}}</li>
-                    {{end}}
-                    </ul>
-                  </td>
-                </tr>
-              {{end}}
+                {{range .Fields}}
+                  <tr>
+                    <td>{{.Name}}</td>
+                    <td><a href="#.{{.FullType}}">{{.LongType}}</a></td>
+                    <td>{{.Label}}</td>
+                    <td><p>{{if (index .Options "deprecated"|default false)}}<strong>Deprecated.</strong> {{end}}{{.Description}} {{if .DefaultValue}}Default: {{.DefaultValue}}{{end}}</p></td>
+                  </tr>
+                {{end}}
               </tbody>
             </table>
-            {{else}}
-            <h4>Fields with {{.}} option</h4>
-            <table>
-              <thead>
-                <tr>
-                  <td>Name</td>
-                  <td>Option</td>
-                </tr>
-              </thead>
-              <tbody>
-              {{range $message.FieldsWithOption .}}
-                <tr>
-                  <td>{{.Name}}</td>
-                  <td><p>{{ printf "%+v" (.Option $option)}}</p></td>
-                </tr>
+              <div class="nested">
+              {{ $FullName := .FullName }}
+              {{ $FullNameA := print .FullName "." }}
+              {{ $FullNameB := print .FullName "/" }}
+              {{range $Messages}}
+                {{ if gt .FullName $FullNameA }}
+                  {{ if lt .FullName $FullNameB }}
+                      <h3 id="{{.FullName}}">{{.LongName}} (message)</h3>
+
+                      {{p .Description}}
+                      <table class="field-table">
+                        <thead>
+                          <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+                        </thead>
+                        <tbody>
+                          {{range .Fields}}
+                            <tr>
+                              <td>{{.Name}}</td>
+                              <td><a href="#.{{.FullType}}">{{.LongType}}</a></td>
+                              <td>{{.Label}}</td>
+                              <td><p>{{if (index .Options "deprecated"|default false)}}<strong>Deprecated.</strong> {{end}}{{.Description}} {{if .DefaultValue}}Default: {{.DefaultValue}}{{end}}</p></td>
+                            </tr>
+                          {{end}}
+                        </tbody>
+                      </table>
+                  {{end}}
+                {{end}}
               {{end}}
-              </tbody>
-            </table>
-            {{end}}
-          {{end -}}
+
+
+              {{range $Enums}}
+                {{ if gt .FullName $FullNameA }}
+                  {{ if lt .FullName $FullNameB }}
+                    <h3 id="{{.FullName}}">{{.LongName}} (enum)</h3>
+                    {{p .Description}}
+                    <table class="enum-table">
+                      <thead>
+                        <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+                      </thead>
+                      <tbody>
+                        {{range .Values}}
+                          <tr>
+                            <td>{{.Name}}</td>
+                            <td>{{.Number}}</td>
+                            <td><p>{{.Description}}</p></td>
+                          </tr>
+                        {{end}}
+                      </tbody>
+                    </table>
+                  {{end}}
+                {{end}}
+              {{end}}
+             </div>
+            </div>
+            </div>
+
+
+
+            {{$message := .}}
+            {{- range .FieldOptions}}
+              {{$option := .}}
+              {{if eq . "validator.field" "validate.rules" }}
+              <h4>Validated Fields</h4>
+              <table>
+                <thead>
+                  <tr>
+                    <td>Field</td>
+                    <td>Validations</td>
+                  </tr>
+                </thead>
+                <tbody>
+                {{range $message.FieldsWithOption .}}
+                  <tr>
+                    <td>{{.Name}}</td>
+                    <td>
+                      <ul>
+                      {{range (.Option $option).Rules}}
+                        <li>{{.Name}}: {{.Value}}</li>
+                      {{end}}
+                      </ul>
+                    </td>
+                  </tr>
+                {{end}}
+                </tbody>
+              </table>
+              {{else}}
+              <h4>Fields with {{.}} option</h4>
+              <table>
+                <thead>
+                  <tr>
+                    <td>Name</td>
+                    <td>Option</td>
+                  </tr>
+                </thead>
+                <tbody>
+                {{range $message.FieldsWithOption .}}
+                  <tr>
+                    <td>{{.Name}}</td>
+                    <td><p>{{ printf "%+v" (.Option $option)}}</p></td>
+                  </tr>
+                {{end}}
+                </tbody>
+              </table>
+              {{end}}
+            {{end -}}
+          {{end}}
         {{end}}
 
         {{if .HasExtensions}}
@@ -300,25 +390,6 @@
             </tbody>
           </table>
         {{end}}
-      {{end}}
-
-      {{range .Enums}}
-        <h3 id="{{.FullName}}">{{.LongName}}</h3>
-        {{p .Description}}
-        <table class="enum-table">
-          <thead>
-            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
-          </thead>
-          <tbody>
-            {{range .Values}}
-              <tr>
-                <td>{{.Name}}</td>
-                <td>{{.Number}}</td>
-                <td><p>{{.Description}}</p></td>
-              </tr>
-            {{end}}
-          </tbody>
-        </table>
       {{end}}
 
       {{if .HasExtensions}}
@@ -406,9 +477,11 @@
             {{end}}
             </tbody>
           </table>
+
           {{end}}
         {{end -}}
       {{end}}
+
     {{end}}
 
     <h2 id="scalar-value-types">Scalar Value Types</h2>
@@ -418,7 +491,7 @@
       </thead>
       <tbody>
         {{range .Scalars}}
-          <tr id="{{.ProtoType}}">
+          <tr id=".{{.ProtoType}}">
             <td>{{.ProtoType}}</td>
             <td>{{.Notes}}</td>
             <td>{{.CppType}}</td>

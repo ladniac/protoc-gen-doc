@@ -1,119 +1,34 @@
 # protoc-gen-doc
 
-[![CI Status][ci-svg]][ci-url]
-[![codecov][codecov-svg]][codecov-url]
-[![GoDoc][godoc-svg]][godoc-url]
-[![Go Report Card][goreport-svg]][goreport-url]
-
-This is a documentation generator plugin for the Google Protocol Buffers compiler (`protoc`). The plugin can generate
-HTML, JSON, DocBook, and Markdown documentation from comments in your `.proto` files.
+This is a fork of documentation generator plugin for the Google Protocol Buffers compiler (`protoc`). It has been modified to help generate mqtt/protobuf API documentation. The plugin can generate
+HTML documentation from comments in your `.proto` files.
 
 It supports proto2 and proto3, and can handle having both in the same context (see [examples](examples/) for proof).
 
 ## Installation
 
-There is a Docker image available (`docker pull pseudomuto/protoc-gen-doc`) that has everything you need to generate
-documentation from your protos.
-
-If you'd like to install this locally, you can `go get` it.
-
-`go get -u github.com/pseudomuto/protoc-gen-doc/cmd/protoc-gen-doc`
-
-Alternatively, you can download a pre-built release for your platform from the [releases][] page.
-
-Finally, this plugin is also available on Maven Central. For details about how to use it, check out the [gradle
-example](examples/gradle).
-
-## Invoking the Plugin
-
-The plugin is invoked by passing the `--doc_out`, and `--doc_opt` options to the `protoc` compiler. The option has the
-following format:
-
-    --doc_opt=<FORMAT>|<TEMPLATE_FILENAME>,<OUT_FILENAME>[,default|source_relative]
-
-The format may be one of the built-in ones ( `docbook`, `html`, `markdown` or `json`)
-or the name of a file containing a custom [Go template][gotemplate].
-
-If the `source_relative` flag is specified, the output file is written in the same relative directory as the input file.
-
-### Using the Docker Image (Recommended)
-
-The docker image has two volumes: `/out` and `/protos` which are the directory to write the documentation to and the
-directory containing your proto files.
-
-You could generate HTML docs for the examples by running the following:
-
+```sh
+    git clone git@github.com:ladniac/protoc-gen-doc.git
+    cd protoc-gen-doc
+    make build
 ```
-docker run --rm \
-  -v $(pwd)/examples/doc:/out \
-  -v $(pwd)/examples/proto:/protos \
-  pseudomuto/protoc-gen-doc
-```
-
-By default HTML documentation is generated in `/out/index.html` for all `.proto` files in the `/protos` volume. This can
-be changed by passing the `--doc_opt` parameter to the container.
-
-For example, to generate Markdown for all the examples:
-
-```
-docker run --rm \
-  -v $(pwd)/examples/doc:/out \
-  -v $(pwd)/examples/proto:/protos \
-  pseudomuto/protoc-gen-doc --doc_opt=markdown,docs.md
-```
-
-You can also generate documentation for a single file. This can be done by passing the file(s) to the command:
-
-```
-docker run --rm \
-  -v $(pwd)/examples/doc:/out \
-  -v $(pwd)/examples/proto:/protos \
-  pseudomuto/protoc-gen-doc --doc_opt=markdown,docs.md Booking.proto [OPTIONALLY LIST MORE FILES]
-```
-
-You can also exclude proto files that match specific path expressions. This is done by passing a second option delimited
-by `:`. For example, you can pass any number of comma separated patterns as the second option:
-
-```
-docker run --rm \
-  -v $(pwd)/examples/doc:/out \
-  -v $(pwd)/examples/proto:/protos \
-  pseudomuto/protoc-gen-doc --doc_opt=:google/*,somepath/*
-```
-
-_**Remember**_: Paths should be from within the container, not the host!
-
-> NOTE: Due to the way wildcard expansion works with docker you cannot use a wildcard path (e.g. `protos/*.proto`) in
-the file list. To get around this, if no files are passed, the container will generate docs for `protos/*.proto`, which
-can be changed by mounting different volumes.
 
 ### Simple Usage
 
-For example, to generate HTML documentation for all `.proto` files in the `proto` directory into `doc/index.html`, type:
+```sh
+    export PROTOC_GEN_DOC_RESOURCES_PATH=path/to/documentation/folder
+```
+documentation folder should contain:
+conf.yaml - configuration file
+overview.html - Overview of the project
+stylesheet.css - custom styles
+see examples in examples/doc_folder_example
 
-    protoc --doc_out=./doc --doc_opt=html,index.html proto/*.proto
-
-The plugin executable must be in `PATH` for this to work. 
-
-### Using a precompiled binary
-
-Alternatively, you can specify a pre-built/not in `PATH` binary using the `--plugin` option.
-
-    protoc \
-      --plugin=protoc-gen-doc=./protoc-gen-doc \
-      --doc_out=./doc \
-      --doc_opt=html,index.html \
-      proto/*.proto
-
-### With a Custom Template
-
-If you'd like to use your own template, simply use the path to the template file rather than the type.
-
-    protoc --doc_out=./doc --doc_opt=/path/to/template.tmpl,index.txt proto/*.proto
-
-For information about the available template arguments and functions, see [Custom Templates][custom]. If you just want
-to customize the look of the HTML output, put your CSS in `stylesheet.css` next to the output file and it will be picked
-up.
+For example, to generate HTML documentation for file.proto into `doc/index.html`, type:
+```sh
+    cd
+    protoc --doc_out=./docs --doc_opt=html,index.html --plugin=bin/protoc-gen-doc file.proto
+```
 
 ## Writing Documentation
 
@@ -168,40 +83,15 @@ message ExcludedMessage {
 }
 ```
 
-Check out the [example protos](examples/proto) to see all the options.
+To mark a message as a mqtt topic:
 
-## Output Example
-
-With the input `.proto` files
-
-* [Booking.proto](examples/proto/Booking.proto)
-* [Customer.proto](examples/proto/Customer.proto)
-* [Vehicle.proto](examples/proto/Vehicle.proto)
-
-the plugin gives the output
-
-* [Markdown](examples/doc/example.md)
-* [HTML][html_preview]
-* [DocBook](examples/doc/example.docbook)
-* [JSON](examples/doc/example.json)
-
-Check out the `examples` task in the [Makefile](Makefile) to see how these were generated.
-
-[gotemplate]:
-    https://golang.org/pkg/text/template/
-    "Template - The Go Programming Language"
-[custom]:
-    https://github.com/pseudomuto/protoc-gen-doc/wiki/Custom-Templates
-    "Custom templates instructions"
-[html_preview]:
-    https://rawgit.com/pseudomuto/protoc-gen-doc/master/examples/doc/example.html
-    "HTML Example Output"
-[codecov-svg]: https://codecov.io/gh/pseudomuto/protoc-gen-doc/branch/master/graph/badge.svg
-[codecov-url]: https://codecov.io/gh/pseudomuto/protoc-gen-doc
-[godoc-svg]: https://godoc.org/github.com/pseudomuto/protoc-gen-doc?status.svg
-[godoc-url]: https://godoc.org/github.com/pseudomuto/protoc-gen-doc
-[goreport-svg]: https://goreportcard.com/badge/github.com/pseudomuto/protoc-gen-doc
-[goreport-url]: https://goreportcard.com/report/github.com/pseudomuto/protoc-gen-doc
-[ci-svg]: https://github.com/pseudomuto/protoc-gen-doc/actions/workflows/ci.yaml/badge.svg?branch=master
-[ci-url]: https://github.com/pseudomuto/protoc-gen-doc/actions/workflows/ci.yaml
-[releases]: https://github.com/pseudomuto/protoc-gen-doc/releases
+```protobuf
+/**
+ * <span class='topic publish'>PUBLISH topic/a/b</span>
+ * This is a leading comment for a message
+ */
+message SomeMessage {
+  // this is another leading comment
+  string value = 1;
+}
+```
