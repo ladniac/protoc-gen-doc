@@ -29,7 +29,7 @@ type Template struct {
 }
 
 type Conf struct {
-	ProjectName string
+	ProjectName string `yaml:"ProjectName"`
 }
 
 // NewTemplate creates a Template object from a set of descriptors.
@@ -50,7 +50,7 @@ func NewTemplate(descs []*protokit.FileDescriptor) *Template {
 		if err != nil {
 			panic(err)
 		}
-		err = yaml.Unmarshal(yamlFile, conf)
+		err = yaml.Unmarshal(yamlFile, &conf)
 		if err != nil {
 			panic(err)
 		}

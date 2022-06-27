@@ -167,7 +167,7 @@
 
   <body>
 
-    <h1 id="title">{{.Conf.ProjectName}} Documentation</h1>
+    <h1 id="title">{{.Conf.ProjectName}} Documentation </h1>
 
     <p>{{.Overview}}</p>
 
@@ -184,9 +184,9 @@
                   <li>
                     <a href="#{{.FullName}}"><span class="badge {{.TopicType}}">T</span>{{.Topic}}</a>
                   </li>
-                {{end}}
-              {{end}}
-            {{end}}
+                {{- end -}}
+              {{- end -}}
+            {{- end -}}
           </ul>
         </li>
       </ul>
@@ -203,30 +203,30 @@
                   <li>
                     <a href="#{{.FullName}}"><span class="badge">M</span>{{.LongName}}</a>
                   </li>
-                {{end}}
-              {{end}}
+                {{- end -}}
+              {{- end -}}
 
               <h2>Enums</h2>
               {{range .Enums}}
                 <li>
                   <a href="#{{.FullName}}"><span class="badge">E</span>{{.LongName}}</a>
                 </li>
-              {{end}}
+              {{- end -}}
 
               {{range .Services}}
                 <li>
                   <a href="#{{.FullName}}"><span class="badge">S</span>{{.Name}}</a>
                 </li>
-              {{end}}
+              {{- end -}}
             </ul>
           </li>
-        {{end}}
+        {{- end -}}
         <li><a href="#scalar-value-types">Scalar Value Types</a></li>
       </ul>
     </div>
 
     <h2>TOPICS</h2>
-      {{range .Files}}
+      {{- range .Files}}
       {{$file_name := .Name}}
       <div class="file-heading">
         <h2 id="{{.Name}}">{{.Name}}</h2><a href="#title">Top</a>
@@ -235,9 +235,9 @@
       {{ $Enums := .Enums}}
       {{ $Messages := .Messages}}
 
-      {{range .Messages}}
-        <div class="topicdef">
+      {{- range .Messages}}
         {{ $length := len .Topic }} {{ if gt $length 0 }}
+          <div class="topicdef">
           <h3 id="{{.FullName}}">
               {{.LongName}}
           </h3>
@@ -253,47 +253,45 @@
                 <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
               </thead>
               <tbody>
-                {{range .Fields}}
+                {{- range .Fields}}
                   <tr>
                     <td>{{.Name}}</td>
                     <td><a href="#.{{.FullType}}">{{.LongType}}</a></td>
                     <td>{{.Label}}</td>
-                    <td><p>{{if (index .Options "deprecated"|default false)}}<strong>Deprecated.</strong> {{end}}{{.Description}} {{if .DefaultValue}}Default: {{.DefaultValue}}{{end}}</p></td>
+                    <td><p>{{if (index .Options "deprecated"|default false)}}<strong>Deprecated.</strong> {{- end -}}{{.Description}} {{if .DefaultValue}}Default: {{.DefaultValue}}{{- end -}}</p></td>
                   </tr>
-                {{end}}
+                {{- end -}}
               </tbody>
             </table>
               <div class="nested">
-              {{ $FullName := .FullName }}
-              {{ $FullNameA := print .FullName "." }}
-              {{ $FullNameB := print .FullName "/" }}
-              {{range $Messages}}
+              {{- $FullName := .FullName }}
+              {{- $FullNameA := print .FullName "." }}
+              {{- $FullNameB := print .FullName "/" }}
+              {{- range $Messages -}}
                 {{ if gt .FullName $FullNameA }}
                   {{ if lt .FullName $FullNameB }}
                       <h3 id="{{.FullName}}">{{.LongName}} (message)</h3>
-
                       {{p .Description}}
                       <table class="field-table">
                         <thead>
                           <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
                         </thead>
                         <tbody>
-                          {{range .Fields}}
+                          {{- range .Fields}}
                             <tr>
                               <td>{{.Name}}</td>
                               <td><a href="#.{{.FullType}}">{{.LongType}}</a></td>
                               <td>{{.Label}}</td>
-                              <td><p>{{if (index .Options "deprecated"|default false)}}<strong>Deprecated.</strong> {{end}}{{.Description}} {{if .DefaultValue}}Default: {{.DefaultValue}}{{end}}</p></td>
+                              <td><p>{{if (index .Options "deprecated"|default false)}}<strong>Deprecated.</strong> {{- end -}}{{.Description}} {{if .DefaultValue}}Default: {{.DefaultValue}}{{- end -}}</p></td>
                             </tr>
-                          {{end}}
+                          {{- end -}}
                         </tbody>
                       </table>
-                  {{end}}
-                {{end}}
-              {{end}}
+                  {{- end -}}
+                {{- end -}}
+              {{- end -}}
 
-
-              {{range $Enums}}
+              {{- range $Enums -}}
                 {{ if gt .FullName $FullNameA }}
                   {{ if lt .FullName $FullNameB }}
                     <h3 id="{{.FullName}}">{{.LongName}} (enum)</h3>
@@ -303,23 +301,21 @@
                         <tr><td>Name</td><td>Number</td><td>Description</td></tr>
                       </thead>
                       <tbody>
-                        {{range .Values}}
+                        {{- range .Values}}
                           <tr>
                             <td>{{.Name}}</td>
                             <td>{{.Number}}</td>
                             <td><p>{{.Description}}</p></td>
                           </tr>
-                        {{end}}
+                        {{- end -}}
                       </tbody>
                     </table>
-                  {{end}}
-                {{end}}
-              {{end}}
+                  {{- end -}}
+                {{- end -}}
+              {{- end -}}
              </div>
             </div>
             </div>
-
-
 
             {{$message := .}}
             {{- range .FieldOptions}}
@@ -341,11 +337,11 @@
                       <ul>
                       {{range (.Option $option).Rules}}
                         <li>{{.Name}}: {{.Value}}</li>
-                      {{end}}
+                      {{- end -}}
                       </ul>
                     </td>
                   </tr>
-                {{end}}
+                {{- end -}}
                 </tbody>
               </table>
               {{else}}
@@ -363,13 +359,13 @@
                     <td>{{.Name}}</td>
                     <td><p>{{ printf "%+v" (.Option $option)}}</p></td>
                   </tr>
-                {{end}}
+                {{- end -}}
                 </tbody>
               </table>
-              {{end}}
-            {{end -}}
-          {{end}}
-        {{end}}
+              {{- end -}}
+            {{- end -}}
+          {{- end -}}
+        {{- end -}}
 
         {{if .HasExtensions}}
           <br>
@@ -384,13 +380,13 @@
                   <td><a href="#{{.FullType}}">{{.LongType}}</a></td>
                   <td><a href="#{{.ContainingFullType}}">{{.ContainingLongType}}</a></td>
                   <td>{{.Number}}</td>
-                  <td><p>{{.Description}}{{if .DefaultValue}} Default: {{.DefaultValue}}{{end}}</p></td>
+                  <td><p>{{.Description}}{{if .DefaultValue}} Default: {{.DefaultValue}}{{- end -}}</p></td>
                 </tr>
-              {{end}}
+              {{- end -}}
             </tbody>
           </table>
-        {{end}}
-      {{end}}
+        {{- end -}}
+      {{- end -}}
 
       {{if .HasExtensions}}
         <h3 id="{{$file_name}}-extensions">File-level Extensions</h3>
@@ -405,12 +401,12 @@
                 <td><a href="#{{.FullType}}">{{.LongType}}</a></td>
                 <td><a href="#{{.ContainingFullType}}">{{.ContainingLongType}}</a></td>
                 <td>{{.Number}}</td>
-                <td><p>{{.Description}}{{if .DefaultValue}} Default: {{.DefaultValue}}{{end}}</p></td>
+                <td><p>{{.Description}}{{if .DefaultValue}} Default: {{.DefaultValue}}{{- end -}}</p></td>
               </tr>
-            {{end}}
+            {{- end -}}
           </tbody>
         </table>
-      {{end}}
+      {{- end -}}
 
       {{range .Services}}
         <h3 id="{{.FullName}}">{{.Name}}</h3>
@@ -423,11 +419,11 @@
             {{range .Methods}}
               <tr>
                 <td>{{.Name}}</td>
-                <td><a href="#{{.RequestFullType}}">{{.RequestLongType}}</a>{{if .RequestStreaming}} stream{{end}}</td>
-                <td><a href="#{{.ResponseFullType}}">{{.ResponseLongType}}</a>{{if .ResponseStreaming}} stream{{end}}</td>
+                <td><a href="#{{.RequestFullType}}">{{.RequestLongType}}</a>{{if .RequestStreaming}} stream{{- end -}}</td>
+                <td><a href="#{{.ResponseFullType}}">{{.ResponseLongType}}</a>{{if .ResponseStreaming}} stream{{- end -}}</td>
                 <td><p>{{.Description}}</p></td>
               </tr>
-            {{end}}
+            {{- end -}}
           </tbody>
         </table>
 
@@ -455,8 +451,8 @@
                 <td>{{.Pattern}}</td>
                 <td>{{.Body}}</td>
               </tr>
-              {{end}}
-            {{end}}
+              {{- end -}}
+            {{- end -}}
             </tbody>
           </table>
           {{else}}
@@ -474,15 +470,15 @@
                 <td>{{.Name}}</td>
                 <td><p>{{ printf "%+v" (.Option $option)}}</p></td>
               </tr>
-            {{end}}
+            {{- end -}}
             </tbody>
           </table>
 
-          {{end}}
-        {{end -}}
-      {{end}}
+          {{- end -}}
+        {{- end -}}
+      {{- end -}}
 
-    {{end}}
+    {{- end -}}
 
     <h2 id="scalar-value-types">Scalar Value Types</h2>
     <table class="scalar-value-types-table">
@@ -502,7 +498,7 @@
             <td>{{.PhpType}}</td>
             <td>{{.RubyType}}</td>
           </tr>
-        {{end}}
+        {{- end -}}
       </tbody>
     </table>
   </body>

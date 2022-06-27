@@ -26,7 +26,6 @@ see examples in examples/doc_folder_example
 
 For example, to generate HTML documentation for file.proto into `doc/index.html`, type:
 ```sh
-    cd
     protoc --doc_out=./docs --doc_opt=html,index.html --plugin=bin/protoc-gen-doc file.proto
 ```
 
